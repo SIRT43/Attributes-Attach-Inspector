@@ -8,8 +8,27 @@ namespace StudioFortithri.AttributesAttachInspector
 {
     internal class CustomInspectorEditor : Editor
     {
+        private readonly struct DisplayEntry
+        {
+            private readonly Inspector _inspector;
+            private readonly SerializedProperty _property;
+
+            public readonly void OnInspectorGUI()
+            {
+                if (_inspector != null) _inspector.InvokeOnInspectorGUI();
+                else if (_property != null)
+                {
+                    EditorGUILayout.PropertyField(_property);
+                    _property.serializedObject.ApplyModifiedProperties();
+                }
+            }
+
+            public DisplayEntry(Inspector inspector) : this() => _inspector = inspector;
+            public DisplayEntry(SerializedProperty property) : this() => _property = property;
+        }
+
         private readonly List<Inspector> _inspectors = new();
-        private readonly List<SerializedProperty> _defaultSerializes = new();
+        private readonly List<DisplayEntry> _displays = new();
 
         private void InitInspectorsWithMemberInfo(MemberInfo member, GUILayoutAttribute[] attributes = null)
         {
@@ -30,6 +49,7 @@ namespace StudioFortithri.AttributesAttachInspector
                 inspector.Targets = targets;
 
                 _inspectors.Add(inspector);
+                _displays.Add(new(inspector));
             }
         }
 
@@ -43,7 +63,7 @@ namespace StudioFortithri.AttributesAttachInspector
                 SerializedProperty serializedProperty = serializedObject.FindProperty(field.Name);
                 GUILayoutAttribute[] attributes = (GUILayoutAttribute[])field.GetCustomAttributes(typeof(GUILayoutAttribute), true);
 
-                if (attributes.Length == 0 && serializedProperty != null) _defaultSerializes.Add(serializedProperty);
+                if (attributes.Length == 0 && serializedProperty != null) _displays.Add(new(serializedProperty));
                 else InitInspectorsWithMemberInfo(field, attributes);
             }
 
@@ -62,10 +82,11 @@ namespace StudioFortithri.AttributesAttachInspector
         }
         public override void OnInspectorGUI()
         {
-            foreach (SerializedProperty property in _defaultSerializes) EditorGUILayout.PropertyField(property);
-            serializedObject.ApplyModifiedProperties();
-
-            foreach (Inspector inspector in _inspectors) inspector.InvokeOnInspectorGUI();
+            foreach (DisplayEntry display in _displays) display.OnInspectorGUI();
+        }
+        private void OnValidate()
+        {
+            foreach (Inspector inspector in _inspectors) inspector.InvokeOnValidate();
         }
     }
 }
