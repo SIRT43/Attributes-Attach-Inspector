@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Reflection;
 using StudioFortithri.AttributesAttachInspector;
@@ -15,7 +16,6 @@ public sealed class ButtonLayoutAttribute : GUILayoutAttribute
 
 public class ButtonInspector : Inspector
 {
-#if UNITY_EDITOR
     private ButtonLayoutAttribute _attribute;
     private MethodInfo _method;
 
@@ -30,5 +30,5 @@ public class ButtonInspector : Inspector
         if (GUILayout.Button(_attribute.Content))
             foreach (UnityEngine.Object target in Targets) _method.Invoke(target, null);
     }
-#endif
 }
+#endif

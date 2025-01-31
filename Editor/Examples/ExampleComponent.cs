@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using StudioFortithri.AttributesAttachInspector;
 using UnityEngine;
 
@@ -11,3 +12,4 @@ public class ExampleComponent : MonoBehaviour
     [ButtonLayout(nameof(PrintValue))]
     public void PrintValue() => Debug.Log($"Value: {value}");
 }
+#endif
