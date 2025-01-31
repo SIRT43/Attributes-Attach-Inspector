@@ -1,0 +1,15 @@
+{
+  "name": "com.studiofortithri.attributesattachinspector",
+  "version": "1.0.0",
+  "displayName": "Attributes Attach Inspector",
+  "description": "\u5141\u8bb8\u5f00\u53d1\u8005\u4f7f\u7528 Attributes \u81ea\u5b9a\u4e49 Inspector \u800c\u4e0d\u662f\u4f7f\u7528 CustomEditor\u3002",
+  "keywords": [
+    "CustomEditor",
+    "Inspector",
+    "Attribute"
+  ],
+  "author": {
+    "name": "UT_SIRT43",
+    "email": "utsirt43@163.com"
+  }
+}
