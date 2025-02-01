@@ -15,7 +15,7 @@ namespace StudioFortithri.AttributesAttachInspector
 
             public readonly void OnInspectorGUI()
             {
-                if (_inspector != null) _inspector.InvokeOnInspectorGUI();
+                if (_inspector != null) _inspector.InternalOnInspectorGUI();
                 else if (_property != null)
                 {
                     EditorGUILayout.PropertyField(_property);
@@ -78,7 +78,7 @@ namespace StudioFortithri.AttributesAttachInspector
         {
             InitInspectors();
 
-            foreach (Inspector inspector in _inspectors) inspector.InvokeOnEnable();
+            foreach (Inspector inspector in _inspectors) inspector.InternalOnEnable();
         }
         public override void OnInspectorGUI()
         {
@@ -86,7 +86,7 @@ namespace StudioFortithri.AttributesAttachInspector
         }
         private void OnValidate()
         {
-            foreach (Inspector inspector in _inspectors) inspector.InvokeOnValidate();
+            foreach (Inspector inspector in _inspectors) inspector.InternalOnValidate();
         }
     }
 }

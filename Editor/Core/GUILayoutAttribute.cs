@@ -40,9 +40,9 @@ namespace StudioFortithri.AttributesAttachInspector
 
         // 这些方法用于本程序集中外部调用。
         // 否则继承者在 override 时将使用 protected internal 而不是 protected，这不是期望的。
-        internal void InvokeOnEnable() => OnEnable();
-        internal void InvokeOnInspectorGUI() => OnInspectorGUI();
-        internal void InvokeOnValidate() => OnValidate();
+        internal void InternalOnEnable() => OnEnable();
+        internal void InternalOnInspectorGUI() => OnInspectorGUI();
+        internal void InternalOnValidate() => OnValidate();
 #endif
     }
 
