@@ -12,39 +12,39 @@ namespace StudioFortithri.AttributesAttachInspector
     /// 通过 System.Reflection 从 UnityEditor.CustomEditorAttributes 提取，原类可见性为 internal。<br></br>
     /// 本类旨在实现更加自由的编辑器检查器扩展。
     /// </summary>
-    [InitializeOnLoad]
     public static class CustomEditorAttributes
     {
         /// <summary>
-        /// 本字段决定本类是否可以在您的编辑器运行。
+        /// 本 property 决定本类是否可以在您的编辑器运行。
         /// </summary>
-        public static readonly bool availability;
+        public static bool Availability { get; private set; }
 
-        private static readonly Assembly _coreModule;
+        private static Assembly _coreModule;
 
         // CustomEditorAttributes 相关。
-        private static readonly Type _customEditorAttributes;
+        private static Type _customEditorAttributes;
 
-        private static readonly FieldInfo _kSCustomEditors;
-        private static readonly FieldInfo _kSCustomMultiEditors;
+        private static FieldInfo _kSCustomEditors;
+        private static FieldInfo _kSCustomMultiEditors;
 
-        private static readonly MethodInfo _rebuild;
+        private static MethodInfo _rebuild;
 
         // MonoEditorType 相关。
-        private static readonly Type _monoEditorType;
+        private static Type _monoEditorType;
 
-        private static readonly FieldInfo _monoEditorType_m_Inspected;
-        private static readonly FieldInfo _monoEditorType_m_Inspector;
-        private static readonly FieldInfo _monoEditorType_m_EditorForChildClasses;
-        private static readonly FieldInfo _monoEditorType_m_IsFallback;
+        private static FieldInfo _monoEditorType_m_Inspected;
+        private static FieldInfo _monoEditorType_m_Inspector;
+        private static FieldInfo _monoEditorType_m_EditorForChildClasses;
+        private static FieldInfo _monoEditorType_m_IsFallback;
 
-        private static readonly Type _listMonoEditorType;
+        private static Type _listMonoEditorType;
 
-        static CustomEditorAttributes()
+        [InitializeOnLoadMethod]
+        private static void Init()
         {
             try
             {
-                availability = true;
+                Availability = true;
 
                 // 从程序集中获取核心模块。
                 foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -58,6 +58,7 @@ namespace StudioFortithri.AttributesAttachInspector
 
                 // 从核心模块获取 CustomEditorAttributes 与它的嵌套类 MonoEditorType。
                 // 见 https://github.com/Unity-Technologies/UnityCsReference/blob/2022.3/Editor/Mono/CustomEditorAttributes.cs。
+
                 _customEditorAttributes = _coreModule.GetType("UnityEditor.CustomEditorAttributes");
 
                 // 本字段用于存储所有 CustomEditor 实现映射。
@@ -88,16 +89,16 @@ namespace StudioFortithri.AttributesAttachInspector
             catch
             {
                 // 初始化发生异常，本类在此编辑器不可用。
-                availability = false;
+                Availability = false;
                 Debug.LogWarning($"Can't init {nameof(CustomEditorAttributes)} on this UnityEditor.");
             }
         }
 
         private static bool IsAvailability()
         {
-            if (!availability)
+            if (!Availability)
                 Debug.LogWarning($"Invoke failed, {nameof(CustomEditorAttributes)} is not availability on this UnityEditor version.");
-            return availability;
+            return Availability;
         }
 
         /// <summary>
@@ -108,9 +109,9 @@ namespace StudioFortithri.AttributesAttachInspector
             if (!IsAvailability()) return;
 
             if (!editorType.IsSubclassOf(typeof(Editor)))
-                throw new ArgumentException($"{nameof(editorType)} must be subclass of {typeof(UnityEngine.Object).FullName}.");
+                throw new ArgumentException($"{nameof(editorType)} must be subclass of UnityEditor.Editor.");
             if (!objectType.IsSubclassOf(typeof(UnityEngine.Object)))
-                throw new ArgumentException($"{nameof(objectType)} must be subclass of {typeof(UnityEngine.Object).FullName}.");
+                throw new ArgumentException($"{nameof(objectType)} must be subclass of UnityEngine.Object.");
 
             IDictionary _kSCustomEditors = (IDictionary)CustomEditorAttributes._kSCustomEditors.GetValue(null);
             IDictionary _kSCustomMultiEditors = (IDictionary)CustomEditorAttributes._kSCustomMultiEditors.GetValue(null);
