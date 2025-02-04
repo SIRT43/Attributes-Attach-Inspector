@@ -112,7 +112,7 @@ namespace StudioFortithri.AttributesAttachInspector
 
                 GetBeforeAfter(field, out GUILayoutAttribute[] before, out GUILayoutAttribute[] after);
 
-                bool isArray = fieldProperty.isArray;
+                bool isArray = fieldProperty.isArray && field.FieldType != typeof(string);
                 Type genericType = isArray ? field.FieldType.GetGenericArguments()[0] : null;
 
                 bool isCustomInspectorField = (isArray ? genericType : field.FieldType)
