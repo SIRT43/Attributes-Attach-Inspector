@@ -1,6 +1,6 @@
 using System;
 
-namespace StudioFortithri.AttributesAttachInspector
+namespace StudioFortithri.Editor43
 {
     /// <summary>
     /// 与 CustomEditor 类似，但本特性应该直接向目标类本身标记。<br></br>

@@ -3,27 +3,28 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
-using UnityEditor.Callbacks;
 
-namespace StudioFortithri.AttributesAttachInspector
+namespace StudioFortithri.Editor43
 {
     /// <summary>
     /// 使用 <see cref="CustomGUILayoutAttribute"/> 指定 <see cref="GUILayoutAttribute"/> 的派生类以绑定绘制器。
     /// </summary>
     public abstract class GUILayoutDrawer
     {
+        protected internal object Target { get; internal set; }
+        protected internal GUILayoutAttribute Attribute { get; internal set; }
         protected internal MemberInfo MemberInfo { get; internal set; }
         protected internal bool IsMethod { get; internal set; }
 
-        private SerializedProperty _serializedProperty;
+        private SerializedProperty serializedProperty;
         protected internal SerializedProperty SerializedProperty
         {
             get
             {
                 if (IsMethod) throw new InvalidOperationException("Can't get serializedProperty with method.");
-                return _serializedProperty;
+                return serializedProperty;
             }
-            internal set => _serializedProperty = value;
+            internal set => serializedProperty = value;
         }
 
         protected virtual void OnEnable() { }
@@ -39,7 +40,7 @@ namespace StudioFortithri.AttributesAttachInspector
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public sealed class CustomGUILayoutAttribute : Attribute
     {
-        internal Type _guiLayout;
+        internal Type guiLayout;
 
         public CustomGUILayoutAttribute(Type guiLayout)
         {
@@ -48,7 +49,7 @@ namespace StudioFortithri.AttributesAttachInspector
             if (!guiLayout.IsSubclassOf(typeof(GUILayoutAttribute)))
                 throw new ArgumentException($"{nameof(guiLayout)} must be subclass of {typeof(GUILayoutAttribute).FullName}.");
 
-            _guiLayout = guiLayout;
+            this.guiLayout = guiLayout;
         }
     }
 
@@ -56,15 +57,12 @@ namespace StudioFortithri.AttributesAttachInspector
     {
         public static readonly Dictionary<Type, Type> binds = new();
 
-        [InitializeOnLoadMethod, DidReloadScripts]
         public static void Rebuild()
         {
-            binds.Clear();
-
             foreach (Type type in TypeCache.GetTypesWithAttribute<CustomGUILayoutAttribute>())
                 if (type.IsSubclassOf(typeof(GUILayoutDrawer)) &&
                     type.GetCustomAttribute(typeof(CustomGUILayoutAttribute), false) is CustomGUILayoutAttribute custom)
-                    binds.Add(custom._guiLayout, type);
+                    binds.Add(custom.guiLayout, type);
         }
     }
 }

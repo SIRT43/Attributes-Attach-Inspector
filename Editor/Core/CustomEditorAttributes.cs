@@ -6,7 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace StudioFortithri.AttributesAttachInspector
+namespace StudioFortithri.Editor43
 {
     /// <summary>
     /// 通过 System.Reflection 从 UnityEditor.CustomEditorAttributes 提取，原类可见性为 internal。<br></br>
@@ -19,25 +19,25 @@ namespace StudioFortithri.AttributesAttachInspector
         /// </summary>
         public static bool Availability { get; private set; }
 
-        private static Assembly _coreModule;
+        private static Assembly coreModule;
 
         // CustomEditorAttributes 相关。
-        private static Type _customEditorAttributes;
+        private static Type customEditorAttributes;
 
-        private static FieldInfo _kSCustomEditors;
-        private static FieldInfo _kSCustomMultiEditors;
+        private static FieldInfo kSCustomEditors;
+        private static FieldInfo kSCustomMultiEditors;
 
-        private static MethodInfo _rebuild;
+        private static MethodInfo rebuild;
 
         // MonoEditorType 相关。
-        private static Type _monoEditorType;
+        private static Type monoEditorType;
 
-        private static FieldInfo _monoEditorType_m_Inspected;
-        private static FieldInfo _monoEditorType_m_Inspector;
-        private static FieldInfo _monoEditorType_m_EditorForChildClasses;
-        private static FieldInfo _monoEditorType_m_IsFallback;
+        private static FieldInfo monoEditorType_m_Inspected;
+        private static FieldInfo monoEditorType_m_Inspector;
+        private static FieldInfo monoEditorType_m_EditorForChildClasses;
+        private static FieldInfo monoEditorType_m_IsFallback;
 
-        private static Type _listMonoEditorType;
+        private static Type listMonoEditorType;
 
         [InitializeOnLoadMethod]
         private static void Init()
@@ -51,7 +51,7 @@ namespace StudioFortithri.AttributesAttachInspector
                 {
                     if (assembly.GetName().Name == "UnityEditor.CoreModule")
                     {
-                        _coreModule = assembly;
+                        coreModule = assembly;
                         break;
                     }
                 }
@@ -59,32 +59,32 @@ namespace StudioFortithri.AttributesAttachInspector
                 // 从核心模块获取 CustomEditorAttributes 与它的嵌套类 MonoEditorType。
                 // 见 https://github.com/Unity-Technologies/UnityCsReference/blob/2022.3/Editor/Mono/CustomEditorAttributes.cs。
 
-                _customEditorAttributes = _coreModule.GetType("UnityEditor.CustomEditorAttributes");
+                customEditorAttributes = coreModule.GetType("UnityEditor.CustomEditorAttributes");
 
                 // 本字段用于存储所有 CustomEditor 实现映射。
-                _kSCustomEditors = _customEditorAttributes.GetField("kSCustomEditors", BindingFlags.Static | BindingFlags.NonPublic);
-                _kSCustomMultiEditors = _customEditorAttributes.GetField("kSCustomMultiEditors", BindingFlags.Static | BindingFlags.NonPublic);
+                kSCustomEditors = customEditorAttributes.GetField("kSCustomEditors", BindingFlags.Static | BindingFlags.NonPublic);
+                kSCustomMultiEditors = customEditorAttributes.GetField("kSCustomMultiEditors", BindingFlags.Static | BindingFlags.NonPublic);
 
-                _rebuild = _customEditorAttributes.GetMethod("Rebuild", BindingFlags.Static | BindingFlags.NonPublic);
+                rebuild = customEditorAttributes.GetMethod("Rebuild", BindingFlags.Static | BindingFlags.NonPublic);
 
-                _monoEditorType = _customEditorAttributes.GetNestedType("MonoEditorType", BindingFlags.NonPublic);
+                monoEditorType = customEditorAttributes.GetNestedType("MonoEditorType", BindingFlags.NonPublic);
 
                 // 获取构造 MonoEditorType 的字段信息。
-                _monoEditorType_m_Inspected = _monoEditorType.GetField("m_InspectedType", BindingFlags.Instance | BindingFlags.Public);
-                _monoEditorType_m_Inspector = _monoEditorType.GetField("m_InspectorType", BindingFlags.Instance | BindingFlags.Public);
-                _monoEditorType_m_EditorForChildClasses = _monoEditorType.GetField("m_EditorForChildClasses", BindingFlags.Instance | BindingFlags.Public);
-                _monoEditorType_m_IsFallback = _monoEditorType.GetField("m_IsFallback", BindingFlags.Instance | BindingFlags.Public);
+                monoEditorType_m_Inspected = monoEditorType.GetField("m_InspectedType", BindingFlags.Instance | BindingFlags.Public);
+                monoEditorType_m_Inspector = monoEditorType.GetField("m_InspectorType", BindingFlags.Instance | BindingFlags.Public);
+                monoEditorType_m_EditorForChildClasses = monoEditorType.GetField("m_EditorForChildClasses", BindingFlags.Instance | BindingFlags.Public);
+                monoEditorType_m_IsFallback = monoEditorType.GetField("m_IsFallback", BindingFlags.Instance | BindingFlags.Public);
 
                 // 实现 List<MonoEditorType> 泛型类型。
-                _listMonoEditorType = typeof(List<>).MakeGenericType(_monoEditorType);
+                listMonoEditorType = typeof(List<>).MakeGenericType(monoEditorType);
 
-                if (_kSCustomEditors == null ||
-                    _kSCustomMultiEditors == null ||
-                    _rebuild == null ||
-                    _monoEditorType_m_Inspected == null ||
-                    _monoEditorType_m_Inspector == null ||
-                    _monoEditorType_m_EditorForChildClasses == null ||
-                    _monoEditorType_m_IsFallback == null) throw new NullReferenceException();
+                if (kSCustomEditors == null ||
+                    kSCustomMultiEditors == null ||
+                    rebuild == null ||
+                    monoEditorType_m_Inspected == null ||
+                    monoEditorType_m_Inspector == null ||
+                    monoEditorType_m_EditorForChildClasses == null ||
+                    monoEditorType_m_IsFallback == null) throw new NullReferenceException();
             }
             catch
             {
@@ -113,23 +113,23 @@ namespace StudioFortithri.AttributesAttachInspector
             if (!objectType.IsSubclassOf(typeof(UnityEngine.Object)))
                 throw new ArgumentException($"{nameof(objectType)} must be subclass of UnityEngine.Object.");
 
-            IDictionary _kSCustomEditors = (IDictionary)CustomEditorAttributes._kSCustomEditors.GetValue(null);
-            IDictionary _kSCustomMultiEditors = (IDictionary)CustomEditorAttributes._kSCustomMultiEditors.GetValue(null);
+            IDictionary kSCustomEditors = (IDictionary)CustomEditorAttributes.kSCustomEditors.GetValue(null);
+            IDictionary kSCustomMultiEditors = (IDictionary)CustomEditorAttributes.kSCustomMultiEditors.GetValue(null);
 
-            object monoEditorType = Activator.CreateInstance(_monoEditorType);
-            _monoEditorType_m_Inspected.SetValue(monoEditorType, objectType);
-            _monoEditorType_m_Inspector.SetValue(monoEditorType, editorType);
-            _monoEditorType_m_EditorForChildClasses.SetValue(monoEditorType, editorForChildClasses);
-            _monoEditorType_m_IsFallback.SetValue(monoEditorType, isFallback);
+            object monoEditorType = Activator.CreateInstance(CustomEditorAttributes.monoEditorType);
+            monoEditorType_m_Inspected.SetValue(monoEditorType, objectType);
+            monoEditorType_m_Inspector.SetValue(monoEditorType, editorType);
+            monoEditorType_m_EditorForChildClasses.SetValue(monoEditorType, editorForChildClasses);
+            monoEditorType_m_IsFallback.SetValue(monoEditorType, isFallback);
 
             {
                 IList list;
 
-                if (_kSCustomEditors.Contains(objectType)) list = (IList)_kSCustomEditors[objectType];
+                if (kSCustomEditors.Contains(objectType)) list = (IList)kSCustomEditors[objectType];
                 else
                 {
-                    list = (IList)Activator.CreateInstance(_listMonoEditorType);
-                    _kSCustomEditors.Add(objectType, list);
+                    list = (IList)Activator.CreateInstance(listMonoEditorType);
+                    kSCustomEditors.Add(objectType, list);
                 }
 
                 list.Insert(0, monoEditorType);
@@ -139,11 +139,11 @@ namespace StudioFortithri.AttributesAttachInspector
             {
                 IList list;
 
-                if (_kSCustomMultiEditors.Contains(objectType)) list = (IList)_kSCustomMultiEditors[objectType];
+                if (kSCustomMultiEditors.Contains(objectType)) list = (IList)kSCustomMultiEditors[objectType];
                 else
                 {
-                    list = (IList)Activator.CreateInstance(_listMonoEditorType);
-                    _kSCustomMultiEditors.Add(objectType, list);
+                    list = (IList)Activator.CreateInstance(listMonoEditorType);
+                    kSCustomMultiEditors.Add(objectType, list);
                 }
 
                 list.Insert(0, monoEditorType);
@@ -157,7 +157,7 @@ namespace StudioFortithri.AttributesAttachInspector
         {
             if (!IsAvailability()) return;
 
-            _rebuild.Invoke(null, null);
+            rebuild.Invoke(null, null);
         }
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace StudioFortithri.AttributesAttachInspector
         {
             if (!IsAvailability()) return;
 
-            foreach (DictionaryEntry entry in (IDictionary)_kSCustomEditors.GetValue(null))
+            foreach (DictionaryEntry entry in (IDictionary)kSCustomEditors.GetValue(null))
                 Debug.Log($"key: {entry.Key} value: {entry.Value}");
         }
     }

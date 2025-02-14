@@ -1,13 +1,11 @@
 #if UNITY_EDITOR
 using System;
 using UnityEditor;
-using UnityEditor.Callbacks;
 
-namespace StudioFortithri.AttributesAttachInspector
+namespace StudioFortithri.Editor43
 {
     internal static class CustomInspectorAttributes
     {
-        [InitializeOnLoadMethod, DidReloadScripts]
         public static void Rebuild()
         {
             foreach (Type type in TypeCache.GetTypesWithAttribute<CustomInspectorAttribute>())

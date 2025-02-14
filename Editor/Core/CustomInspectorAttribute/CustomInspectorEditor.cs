@@ -1,13 +1,10 @@
 ﻿#if UNITY_EDITOR
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
-using UnityEditor.Callbacks;
-using UnityEditorInternal;
 
-namespace StudioFortithri.AttributesAttachInspector
+namespace StudioFortithri.Editor43
 {
     internal class CustomInspectorEditor : Editor
     {
@@ -31,15 +28,8 @@ namespace StudioFortithri.AttributesAttachInspector
             }
         }
 
-        private static readonly Dictionary<Type, List<FieldInfo>> _fieldCache = new();
-        private static readonly Dictionary<Type, List<MethodInfo>> _methodCache = new();
-
-        [DidReloadScripts]
-        private static void CleanCache()
-        {
-            _fieldCache.Clear();
-            _methodCache.Clear();
-        }
+        private static readonly Dictionary<Type, List<FieldInfo>> fieldCache = new();
+        private static readonly Dictionary<Type, List<MethodInfo>> methodCache = new();
 
         private static void GetBeforeAfter(MemberInfo member, out GUILayoutAttribute[] before, out GUILayoutAttribute[] after)
         {
@@ -50,11 +40,11 @@ namespace StudioFortithri.AttributesAttachInspector
 
             foreach (GUILayoutAttribute attribute in attributes)
             {
-                if (attribute._order < 0) beforeAttributes.Add(attribute);
+                if (attribute.order < 0) beforeAttributes.Add(attribute);
                 else afterAttributes.Add(attribute);
             }
 
-            static int Comparison(GUILayoutAttribute a, GUILayoutAttribute b) => a._order.CompareTo(b);
+            static int Comparison(GUILayoutAttribute a, GUILayoutAttribute b) => a.order.CompareTo(b.order);
 
             beforeAttributes.Sort(Comparison);
             afterAttributes.Sort(Comparison);
@@ -63,7 +53,7 @@ namespace StudioFortithri.AttributesAttachInspector
             after = afterAttributes.ToArray();
         }
 
-        private static void InitSingle(GUILayoutAttribute[] attributes, MemberInfo member, SerializedProperty property, List<GUILayoutDrawer> drawers, List<GUIHierarchy> hierarchies)
+        private static void InitSingle(object target, GUILayoutAttribute[] attributes, MemberInfo member, SerializedProperty property, List<GUILayoutDrawer> drawers, List<GUIHierarchy> hierarchies)
         {
             for (int index = 0; index < attributes.Length; index++)
             {
@@ -73,6 +63,8 @@ namespace StudioFortithri.AttributesAttachInspector
 
                 GUILayoutDrawer guiLayoutDrawer = (GUILayoutDrawer)Activator.CreateInstance(drawerType);
 
+                guiLayoutDrawer.Target = target;
+                guiLayoutDrawer.Attribute = attributes[index];
                 guiLayoutDrawer.MemberInfo = member;
                 guiLayoutDrawer.IsMethod = member.MemberType == MemberTypes.Method;
                 guiLayoutDrawer.SerializedProperty = property;
@@ -82,26 +74,15 @@ namespace StudioFortithri.AttributesAttachInspector
             }
         }
 
-        private static void InitArray(IList array, SerializedObject serializedObject, SerializedProperty property, List<GUILayoutDrawer> drawers, List<List<GUIHierarchy>> arrayHierarchies)
-        {
-            for (int index = 0; index < array.Count; index++)
-            {
-                List<GUIHierarchy> singleHierarchies = new();
-                arrayHierarchies.Add(singleHierarchies);
-
-                Init(array[index], serializedObject, drawers, singleHierarchies, property.GetArrayElementAtIndex(index));
-            }
-        }
-
         private static void Init(object target, SerializedObject serializedObject, List<GUILayoutDrawer> drawers, List<GUIHierarchy> hierarchies, SerializedProperty fromProperty = null)
         {
             Type type = target.GetType();
             BindingFlags binding = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-            if (!_fieldCache.ContainsKey(type)) _fieldCache.Add(type, new(type.GetFields(binding)));
-            if (!_methodCache.ContainsKey(type)) _methodCache.Add(type, new(type.GetMethods(binding)));
+            if (!fieldCache.ContainsKey(type)) fieldCache.Add(type, new(type.GetFields(binding)));
+            if (!methodCache.ContainsKey(type)) methodCache.Add(type, new(type.GetMethods(binding)));
 
-            foreach (FieldInfo field in _fieldCache[type])
+            foreach (FieldInfo field in fieldCache[type])
             {
                 SerializedProperty fieldProperty = fromProperty == null ?
                     serializedObject.FindProperty(field.Name) :
@@ -110,15 +91,20 @@ namespace StudioFortithri.AttributesAttachInspector
                 // 此字段无法序列化则跳过本字段。
                 if (fieldProperty == null) continue;
 
+                Type fieldType = field.FieldType;
+                bool isArray = fieldProperty.isArray && fieldType != typeof(string);
+
+                Type arrayElementType = null;
+                if (isArray) arrayElementType = fieldType.IsGenericType ?
+                        fieldType.GetGenericArguments()[0] : fieldType.GetElementType();
+
+                Type customInspectorFieldType = isArray ? arrayElementType : field.FieldType;
+                bool isCustomInspectorField =
+                    !customInspectorFieldType.IsSubclassOf(typeof(UnityEngine.Object)) &&
+                    customInspectorFieldType.IsDefined(typeof(CustomInspectorAttribute), false);
+
                 GetBeforeAfter(field, out GUILayoutAttribute[] before, out GUILayoutAttribute[] after);
-
-                bool isArray = fieldProperty.isArray && field.FieldType != typeof(string);
-                Type genericType = isArray ? field.FieldType.GetGenericArguments()[0] : null;
-
-                bool isCustomInspectorField = (isArray ? genericType : field.FieldType)
-                    .IsDefined(typeof(CustomInspectorAttribute), false);
-
-                InitSingle(before, field, fieldProperty, drawers, hierarchies);
+                InitSingle(target, before, field, fieldProperty, drawers, hierarchies);
 
                 {
                     GUIHierarchy hierarchy = null;
@@ -126,37 +112,15 @@ namespace StudioFortithri.AttributesAttachInspector
                     // 如果是自定义 Inspector 类则需要自定义 Inspector GUI 而不是使用 EditorGUILayout.PropertyField 绘制默认 GUI。
                     if (isCustomInspectorField)
                     {
-                        // 如果是数组则使用 ReorderableList 绘制。
-                        if (isArray)
+                        // 如果是数组。
+                        if (isArray) hierarchy = new()
                         {
-                            IList array = field.GetValue(target) as IList;
-
-                            List<GUILayoutDrawer> arrayDrawers = new();
-                            List<List<GUIHierarchy>> arrayHierarchies = new() { Capacity = fieldProperty.arraySize };
-
-                            InitArray(array, serializedObject, fieldProperty, arrayDrawers, arrayHierarchies);
-
-                            foreach (GUILayoutDrawer drawer in arrayDrawers)
-                                drawer.InternalOnEnable();
-
-                            ReorderableList guiList = new(array, genericType, true, false, true, true)
+                            onInspectorGUICallback = () =>
                             {
-                                drawElementCallback = (rect, index, isActive, isFocused) =>
-                                {
-                                    foreach (GUIHierarchy hierarchy in arrayHierarchies[index])
-                                        hierarchy.OnInspectorGUI();
-                                },
-                                onChangedCallback = (list) =>
-                                {
-                                    arrayDrawers.Clear();
-                                    arrayHierarchies.Clear();
-
-                                    InitArray(array, serializedObject, fieldProperty, arrayDrawers, arrayHierarchies);
-                                }
-                            };
-
-                            hierarchy = new() { onInspectorGUICallback = () => guiList.DoLayoutList() };
-                        }
+                                EditorGUILayout.PropertyField(fieldProperty);
+                                EditorGUILayout.HelpBox("Unable to draw a custom inspector for an array.\nCustom inspector disabled, please use CustomPropertyDrawer.", MessageType.Warning);
+                            }
+                        };
                         // 如果是类型则绘制抽屉。
                         else
                         {
@@ -175,29 +139,28 @@ namespace StudioFortithri.AttributesAttachInspector
                     if (hierarchy != null) hierarchies.Add(hierarchy);
                 }
 
-                InitSingle(after, field, fieldProperty, drawers, hierarchies);
+                InitSingle(target, after, field, fieldProperty, drawers, hierarchies);
             }
 
-            foreach (MethodInfo method in _methodCache[type])
-                InitSingle((GUILayoutAttribute[])method.GetCustomAttributes(typeof(GUILayoutAttribute), true), method, null, drawers, hierarchies);
-
+            foreach (MethodInfo method in methodCache[type])
+                InitSingle(target, (GUILayoutAttribute[])method.GetCustomAttributes(typeof(GUILayoutAttribute), true), method, null, drawers, hierarchies);
         }
 
-        private readonly List<GUILayoutDrawer> _drawers = new();
-        private readonly List<GUIHierarchy> _hierarchies = new();
+        private readonly List<GUILayoutDrawer> drawers = new();
+        private readonly List<GUIHierarchy> hierarchies = new();
 
         private void OnEnable()
         {
-            Init(target, serializedObject, _drawers, _hierarchies);
+            Init(target, serializedObject, drawers, hierarchies);
 
-            foreach (GUILayoutDrawer drawer in _drawers) drawer.InternalOnEnable();
+            foreach (GUILayoutDrawer drawer in drawers) drawer.InternalOnEnable();
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            foreach (GUIHierarchy hierarchy in _hierarchies) hierarchy.OnInspectorGUI();
+            foreach (GUIHierarchy hierarchy in hierarchies) hierarchy.OnInspectorGUI();
 
             serializedObject.ApplyModifiedProperties();
         }
