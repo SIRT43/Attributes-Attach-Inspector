@@ -168,11 +168,6 @@ namespace StudioFortithri.Editor43
 
             serializedObject.ApplyModifiedProperties();
         }
-
-        private void OnValidate()
-        {
-            foreach (GUILayoutDrawer drawer in drawers) drawer.InternalOnValidate();
-        }
     }
 }
 #endif
