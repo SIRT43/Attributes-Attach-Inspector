@@ -55,6 +55,8 @@ namespace StudioFortithri.Editor43
 
         private static void InitSingle(object target, GUILayoutAttribute[] attributes, MemberInfo member, SerializedProperty property, List<GUILayoutDrawer> drawers, List<GUIHierarchy> hierarchies)
         {
+            GUILayoutDrawer.GUILayoutDrawState drawState = new();
+
             for (int index = 0; index < attributes.Length; index++)
             {
                 Type attributeType = attributes[index].GetType();
@@ -68,6 +70,7 @@ namespace StudioFortithri.Editor43
                 guiLayoutDrawer.MemberInfo = member;
                 guiLayoutDrawer.IsMethod = member.MemberType == MemberTypes.Method;
                 guiLayoutDrawer.SerializedProperty = property;
+                guiLayoutDrawer.DrawState = drawState;
 
                 drawers.Add(guiLayoutDrawer);
                 hierarchies.Add(new() { onInspectorGUICallback = () => guiLayoutDrawer.InternalOnInspectorGUI() });
@@ -161,6 +164,7 @@ namespace StudioFortithri.Editor43
             serializedObject.Update();
 
             foreach (GUIHierarchy hierarchy in hierarchies) hierarchy.OnInspectorGUI();
+            foreach (GUILayoutDrawer drawer in drawers) drawer.DrawState.isDrawed = false;
 
             serializedObject.ApplyModifiedProperties();
         }

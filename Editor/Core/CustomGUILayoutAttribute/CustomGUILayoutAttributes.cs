@@ -11,6 +11,11 @@ namespace StudioFortithri.Editor43
     /// </summary>
     public abstract class GUILayoutDrawer
     {
+        protected internal sealed class GUILayoutDrawState
+        {
+            public bool isDrawed = false;
+        }
+
         protected internal object Target { get; internal set; }
         protected internal GUILayoutAttribute Attribute { get; internal set; }
         protected internal MemberInfo MemberInfo { get; internal set; }
@@ -26,6 +31,8 @@ namespace StudioFortithri.Editor43
             }
             internal set => serializedProperty = value;
         }
+
+        protected internal GUILayoutDrawState DrawState { get; internal set; }
 
         protected virtual void OnEnable() { }
         protected virtual void OnInspectorGUI() { }
