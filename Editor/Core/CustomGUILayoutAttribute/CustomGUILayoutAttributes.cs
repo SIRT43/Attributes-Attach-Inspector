@@ -29,9 +29,11 @@ namespace StudioFortithri.Editor43
 
         protected virtual void OnEnable() { }
         protected virtual void OnInspectorGUI() { }
+        protected virtual void OnValidate() { }
 
         internal void InternalOnEnable() => OnEnable();
         internal void InternalOnInspectorGUI() => OnInspectorGUI();
+        internal void InternalOnValidate() => OnValidate();
     }
 
     /// <summary>
