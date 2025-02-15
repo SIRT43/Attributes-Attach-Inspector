@@ -8,6 +8,7 @@ namespace StudioFortithri.Editor43
 {
     internal class CustomInspectorEditor : Editor
     {
+        // GUI 层级，用于实现嵌套的 Custom Inspector Serializable 数据结构。
         private class GUIHierarchy
         {
             public Action onInspectorGUICallback;
@@ -28,13 +29,16 @@ namespace StudioFortithri.Editor43
             }
         }
 
+        // 缓存成员信息，加快初始化流程。
         private static readonly Dictionary<Type, List<FieldInfo>> fieldCache = new();
         private static readonly Dictionary<Type, List<MethodInfo>> methodCache = new();
 
         private static void GetBeforeAfter(MemberInfo member, out GUILayoutAttribute[] before, out GUILayoutAttribute[] after)
         {
+            // 获取所有 GUI Layout Attributes。
             GUILayoutAttribute[] attributes = (GUILayoutAttribute[])member.GetCustomAttributes(typeof(GUILayoutAttribute), true);
 
+            // 进行 before after 分类。
             List<GUILayoutAttribute> beforeAttributes = new() { Capacity = attributes.Length };
             List<GUILayoutAttribute> afterAttributes = new() { Capacity = attributes.Length };
 
@@ -44,6 +48,7 @@ namespace StudioFortithri.Editor43
                 else afterAttributes.Add(attribute);
             }
 
+            // sort 所有 List。
             static int Comparison(GUILayoutAttribute a, GUILayoutAttribute b) => a.order.CompareTo(b.order);
 
             beforeAttributes.Sort(Comparison);
@@ -61,6 +66,7 @@ namespace StudioFortithri.Editor43
             {
                 Type attributeType = attributes[index].GetType();
 
+                // 如果没有创建关于此 GUI Layout Attribute 的 GUI Layout Drawer 绑定则跳过本 GUI Layout Attribute。
                 if (!CustomGUILayoutAttributes.binds.TryGetValue(attributeType, out Type drawerType)) continue;
 
                 GUILayoutDrawer guiLayoutDrawer = (GUILayoutDrawer)Activator.CreateInstance(drawerType);
@@ -82,6 +88,7 @@ namespace StudioFortithri.Editor43
             Type type = target.GetType();
             BindingFlags binding = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
+            // 缓存获取的字段与方法。
             if (!fieldCache.ContainsKey(type)) fieldCache.Add(type, new(type.GetFields(binding)));
             if (!methodCache.ContainsKey(type)) methodCache.Add(type, new(type.GetMethods(binding)));
 
@@ -95,6 +102,8 @@ namespace StudioFortithri.Editor43
                 if (fieldProperty == null) continue;
 
                 Type fieldType = field.FieldType;
+                // 判断此 SerializedProperty 是否是数组不仅要访问 isArray 还要确认它不是 string。
+                // 因为 string 以数组序列化但是检查器不会以数组为 string 创建 Inspector GUI。
                 bool isArray = fieldProperty.isArray && fieldType != typeof(string);
 
                 Type arrayElementType = null;
@@ -102,6 +111,8 @@ namespace StudioFortithri.Editor43
                         fieldType.GetGenericArguments()[0] : fieldType.GetElementType();
 
                 Type customInspectorFieldType = isArray ? arrayElementType : field.FieldType;
+                // 要确认是否以嵌套的方式创建 Inspector GUI 需要确认此 Custom Inspector 类型不是 UnityEngine.Object 的派生类，
+                // 因为 UnityEngine.Object 是以资产引用的方式渲染的而不是层级结构。
                 bool isCustomInspectorField =
                     !customInspectorFieldType.IsSubclassOf(typeof(UnityEngine.Object)) &&
                     customInspectorFieldType.IsDefined(typeof(CustomInspectorAttribute), false);
@@ -109,6 +120,11 @@ namespace StudioFortithri.Editor43
                 GetBeforeAfter(field, out GUILayoutAttribute[] before, out GUILayoutAttribute[] after);
                 InitSingle(target, before, field, fieldProperty, drawers, hierarchies);
 
+                // 本作用域决定了绘制行为。
+                // 如果是 Custom Inspector:
+                //     是数组则绘制默认 (EditorGUILayout.PropertyField) GUI 并发出警告。
+                //     不是数组则创建抽屉层级并基于那个层级创建嵌套 Custom Inspector 层级。
+                // 如果不是 Custom Inspector 且没有任何自定义 GUI Layout Attribute 则绘制默认 GUI。
                 {
                     GUIHierarchy hierarchy = null;
 
@@ -124,7 +140,7 @@ namespace StudioFortithri.Editor43
                                 EditorGUILayout.HelpBox("Unable to draw a custom inspector for an array.\nCustom inspector disabled, please use CustomPropertyDrawer.", MessageType.Warning);
                             }
                         };
-                        // 如果是类型则绘制抽屉。
+                        // 如果是类型则绘制抽屉。(层级结构)
                         else
                         {
                             hierarchy = new();
@@ -135,7 +151,7 @@ namespace StudioFortithri.Editor43
                             Init(field.GetValue(target), serializedObject, drawers, hierarchy.child, fieldProperty);
                         }
                     }
-                    // 如果不是自定义 Inspector 类且没有任何自定义 attribute 则绘制默认 GUI。
+                    // 如果不是 Custom Inspector 类且没有任何自定义 attribute 则绘制默认 GUI。
                     else if (before.Length == 0 && after.Length == 0)
                         hierarchy = new() { onInspectorGUICallback = () => EditorGUILayout.PropertyField(fieldProperty) };
 
@@ -164,6 +180,8 @@ namespace StudioFortithri.Editor43
             serializedObject.Update();
 
             foreach (GUIHierarchy hierarchy in hierarchies) hierarchy.OnInspectorGUI();
+            // 在每次绘制后重置 DrawState.isDrawed。
+            // 因为下一次 GUI 会被重绘，如果不重置那么任何基于 isDrawed 绘制的 GUI 都不会被绘制。
             foreach (GUILayoutDrawer drawer in drawers) drawer.DrawState.isDrawed = false;
 
             serializedObject.ApplyModifiedProperties();

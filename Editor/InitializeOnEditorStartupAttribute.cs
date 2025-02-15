@@ -14,7 +14,7 @@ namespace StudioFortithri.Editor43
         [Serializable]
         private class StartupMark
         {
-            public bool inited = true;
+            public bool inited;
         }
 
         private static readonly string markFilePath =
@@ -23,26 +23,39 @@ namespace StudioFortithri.Editor43
         [InitializeOnLoadMethod]
         private static void OnLoadMethod()
         {
-            StartupMark mark = new();
+            StartupMark mark = new() { inited = true };
 
-            if (File.Exists(markFilePath))
+            if (!File.Exists(markFilePath))
             {
-                EditorJsonUtility.FromJsonOverwrite(File.ReadAllText(markFilePath), mark);
-
-                if (mark.inited) return;
-
-                mark.inited = true;
+                File.Create(markFilePath).Close();
+                // 直接 ToJson 而不是进行 StartupMark.inited 反转操作是因为上文中 inited 已初始化为 true。
                 File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(mark));
 
                 InvokeMethods();
             }
             else
             {
-                File.Create(markFilePath).Close();
-                File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(mark));
+                // 覆写 mark，在这个作用域中不需要在意 mark 的原值。
+                EditorJsonUtility.FromJsonOverwrite(File.ReadAllText(markFilePath), mark);
 
-                InvokeMethods();
+                if (!mark.inited)
+                {
+                    mark.inited = true;
+                    File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(mark));
+
+                    InvokeMethods();
+                }
             }
+
+            // Editor 退出后重置 StartupMark 的状态为 false。
+            EditorApplication.quitting += OnEditorQuit;
+        }
+
+        private static void OnEditorQuit()
+        {
+            if (!File.Exists(markFilePath)) return;
+
+            File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(new StartupMark() { inited = false }));
         }
 
         private static void InvokeMethods()

@@ -56,12 +56,12 @@ namespace StudioFortithri.Editor43
                     }
                 }
 
-                // 从核心模块获取 CustomEditorAttributes 与它的嵌套类 MonoEditorType。
+                // 从核心模块获取 CustomEditorAttributes 与它的嵌套类 MonoEditorType 相关的 Reflection 信息。
                 // 见 https://github.com/Unity-Technologies/UnityCsReference/blob/2022.3/Editor/Mono/CustomEditorAttributes.cs。
 
                 customEditorAttributes = coreModule.GetType("UnityEditor.CustomEditorAttributes");
 
-                // 本字段用于存储所有 CustomEditor 实现映射。
+                // 以下两个字段用于存储所有 CustomEditor 实现映射。
                 kSCustomEditors = customEditorAttributes.GetField("kSCustomEditors", BindingFlags.Static | BindingFlags.NonPublic);
                 kSCustomMultiEditors = customEditorAttributes.GetField("kSCustomMultiEditors", BindingFlags.Static | BindingFlags.NonPublic);
 
@@ -78,6 +78,7 @@ namespace StudioFortithri.Editor43
                 // 实现 List<MonoEditorType> 泛型类型。
                 listMonoEditorType = typeof(List<>).MakeGenericType(monoEditorType);
 
+                // 存在无法获取的情况那么本类则无法工作，抛出异常并进入 Catch 作用域。
                 if (kSCustomEditors == null ||
                     kSCustomMultiEditors == null ||
                     rebuild == null ||
@@ -90,7 +91,7 @@ namespace StudioFortithri.Editor43
             {
                 // 初始化发生异常，本类在此编辑器不可用。
                 Availability = false;
-                Debug.LogWarning($"Can't init {nameof(CustomEditorAttributes)} on this UnityEditor.");
+                Debug.LogWarning($"Can't init {nameof(CustomEditorAttributes)} on this UnityEditor version.");
             }
         }
 

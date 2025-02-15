@@ -2,13 +2,13 @@ using System;
 
 namespace StudioFortithri.Editor43
 {
-    /// <summary>
-    /// 通过继承本类来创建 GUI Layout Attribute 标记。
-    /// </summary>
     public abstract class GUILayoutAttribute : Attribute
     {
         internal int order;
 
+        /// <summary>
+        /// 指定绘制顺序，大于 -1 则在绘制默认内容之前调用，小于 0 则在绘制默认内容之后调用。
+        /// </summary>
         public GUILayoutAttribute(int order) => this.order = order;
         public GUILayoutAttribute() : this(0) { }
     }

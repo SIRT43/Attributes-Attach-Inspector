@@ -7,7 +7,7 @@ using UnityEditor;
 namespace StudioFortithri.Editor43
 {
     /// <summary>
-    /// 使用 <see cref="CustomGUILayoutAttribute"/> 指定 <see cref="GUILayoutAttribute"/> 的派生类以绑定绘制器。
+    /// 为本类的派生类使用 <see cref="CustomGUILayoutAttribute"/> 指定 <see cref="GUILayoutAttribute"/> 的派生类以绑定绘制器。
     /// </summary>
     public abstract class GUILayoutDrawer
     {
@@ -32,6 +32,9 @@ namespace StudioFortithri.Editor43
             internal set => serializedProperty = value;
         }
 
+        /// <summary>
+        /// 本次 <see cref="OnInspectorGUI"/> 调用是否已经有 Drawer 绘制过 GUI。
+        /// </summary>
         protected internal GUILayoutDrawState DrawState { get; internal set; }
 
         protected virtual void OnEnable() { }
@@ -41,9 +44,6 @@ namespace StudioFortithri.Editor43
         internal void InternalOnInspectorGUI() => OnInspectorGUI();
     }
 
-    /// <summary>
-    /// 为 <see cref="GUILayoutDrawer"/> 绑定 <see cref="GUILayoutAttribute"/>。
-    /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public sealed class CustomGUILayoutAttribute : Attribute
     {
@@ -69,6 +69,7 @@ namespace StudioFortithri.Editor43
             foreach (Type type in TypeCache.GetTypesWithAttribute<CustomGUILayoutAttribute>())
                 if (type.IsSubclassOf(typeof(GUILayoutDrawer)) &&
                     type.GetCustomAttribute(typeof(CustomGUILayoutAttribute), false) is CustomGUILayoutAttribute custom)
+
                     binds.Add(custom.guiLayout, type);
         }
     }
