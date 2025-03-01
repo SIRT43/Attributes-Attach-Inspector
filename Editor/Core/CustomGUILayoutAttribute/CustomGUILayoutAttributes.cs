@@ -14,6 +14,8 @@ namespace StudioFortithri.Editor43
         protected internal sealed class GUILayoutDrawState
         {
             public bool isDrawed = false;
+
+            internal GUILayoutDrawState() { }
         }
 
         protected internal object Target { get; internal set; }

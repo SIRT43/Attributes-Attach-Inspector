@@ -29,16 +29,13 @@ namespace StudioFortithri.Editor43
             }
         }
 
-        // 缓存成员信息，加快初始化流程。
         private static readonly Dictionary<Type, List<FieldInfo>> fieldCache = new();
         private static readonly Dictionary<Type, List<MethodInfo>> methodCache = new();
 
         private static void GetBeforeAfter(MemberInfo member, out GUILayoutAttribute[] before, out GUILayoutAttribute[] after)
         {
-            // 获取所有 GUI Layout Attributes。
             GUILayoutAttribute[] attributes = (GUILayoutAttribute[])member.GetCustomAttributes(typeof(GUILayoutAttribute), true);
 
-            // 进行 before after 分类。
             List<GUILayoutAttribute> beforeAttributes = new() { Capacity = attributes.Length };
             List<GUILayoutAttribute> afterAttributes = new() { Capacity = attributes.Length };
 
@@ -48,7 +45,6 @@ namespace StudioFortithri.Editor43
                 else afterAttributes.Add(attribute);
             }
 
-            // sort 所有 List。
             static int Comparison(GUILayoutAttribute a, GUILayoutAttribute b) => a.order.CompareTo(b.order);
 
             beforeAttributes.Sort(Comparison);
@@ -88,7 +84,6 @@ namespace StudioFortithri.Editor43
             Type type = target.GetType();
             BindingFlags binding = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-            // 缓存获取的字段与方法。
             if (!fieldCache.ContainsKey(type)) fieldCache.Add(type, new(type.GetFields(binding)));
             if (!methodCache.ContainsKey(type)) methodCache.Add(type, new(type.GetMethods(binding)));
 
@@ -112,7 +107,7 @@ namespace StudioFortithri.Editor43
 
                 Type customInspectorFieldType = isArray ? arrayElementType : field.FieldType;
                 // 要确认是否以嵌套的方式创建 Inspector GUI 需要确认此 Custom Inspector 类型不是 UnityEngine.Object 的派生类，
-                // 因为 UnityEngine.Object 是以资产引用的方式渲染的而不是层级结构。
+                // 因为 UnityEngine.Object 是以资产引用的方式创建 GUI 而不是层级结构。
                 bool isCustomInspectorField =
                     !customInspectorFieldType.IsSubclassOf(typeof(UnityEngine.Object)) &&
                     customInspectorFieldType.IsDefined(typeof(CustomInspectorAttribute), false);
@@ -181,7 +176,7 @@ namespace StudioFortithri.Editor43
 
             foreach (GUIHierarchy hierarchy in hierarchies) hierarchy.OnInspectorGUI();
             // 在每次绘制后重置 DrawState.isDrawed。
-            // 因为下一次 GUI 会被重绘，如果不重置那么任何基于 isDrawed 绘制的 GUI 都不会被绘制。
+            // 因为下一次 GUI 会被重绘，如果不重置那么任何基于 isDrawed 绘制的 GUI 都不会被继续绘制。
             foreach (GUILayoutDrawer drawer in drawers) drawer.DrawState.isDrawed = false;
 
             serializedObject.ApplyModifiedProperties();

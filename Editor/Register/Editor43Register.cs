@@ -6,7 +6,7 @@ namespace StudioFortithri.Editor43
     internal static class Editor43Register
     {
         [InitializeOnEditorStartup, DidReloadScripts]
-        private static void RegCustomInspector()
+        private static void RebuildCustomInspector()
         {
             CustomGUILayoutAttributes.Rebuild();
             CustomInspectorAttributes.Rebuild();
