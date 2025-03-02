@@ -71,7 +71,6 @@ namespace StudioFortithri.Editor43
             foreach (Type type in TypeCache.GetTypesWithAttribute<CustomGUILayoutAttribute>())
                 if (type.IsSubclassOf(typeof(GUILayoutDrawer)) &&
                     type.GetCustomAttribute(typeof(CustomGUILayoutAttribute), false) is CustomGUILayoutAttribute custom)
-
                     binds.Add(custom.guiLayout, type);
         }
     }
