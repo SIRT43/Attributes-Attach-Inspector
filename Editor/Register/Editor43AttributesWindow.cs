@@ -13,8 +13,7 @@ namespace StudioFortithri.Editor43
             window.Show();
         }
 
-        private void OnEnable() =>
-            position = new(Screen.width / 2, Screen.height / 2, minSize.x, minSize.y);
+        private void OnEnable() => position = new(Screen.width / 2, Screen.height / 2, minSize.x, minSize.y);
 
         private void OnGUI()
         {

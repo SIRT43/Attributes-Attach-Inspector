@@ -10,13 +10,9 @@ namespace StudioFortithri.Editor43
     public sealed class InitializeOnEditorStartupAttribute : Attribute
     {
         [Serializable]
-        private class StartupMark
-        {
-            public bool isStartup = true;
-        }
+        private class StartupMark { public bool isStartup = true; }
 
-        private static readonly string markFilePath =
-            Path.Combine(ProjectPaths.projectSettingsPath, "Editor43_StartupMark.json");
+        private static readonly string markFilePath = Path.Combine(ProjectPaths.projectSettingsPath, "Editor43_StartupMark.json");
         private static readonly StartupMark single = new();
 
         [InitializeOnLoadMethod]

@@ -153,8 +153,8 @@ namespace StudioFortithri.Editor43
             }
         }
         public static void CreateCustomEditor<TObject, TEditor>(bool editorForChildClasses = false, bool isFallback = false, bool canEditMultipleObject = false)
-           where TObject : UnityEngine.Object where TEditor : Editor
-            => CreateCustomEditor(typeof(TObject), typeof(TEditor), editorForChildClasses, isFallback, canEditMultipleObject);
+            where TObject : UnityEngine.Object where TEditor : Editor =>
+            CreateCustomEditor(typeof(TObject), typeof(TEditor), editorForChildClasses, isFallback, canEditMultipleObject);
 
         /// <summary>
         /// 重建 CustomEditor 映射关系。（不会重建通过 <see cref="CreateCustomEditor"/> 创建的映射）
