@@ -12,11 +12,12 @@ namespace StudioFortithri.Editor43
         [Serializable]
         private class StartupMark
         {
-            public bool isStartup = true;
+            public bool isStartup;
+
+            public StartupMark(bool isStartup) => this.isStartup = isStartup;
         }
 
         private static readonly string markFilePath = Path.Combine(ProjectPaths.projectSettingsPath, "Editor43_StartupMark.json");
-        private static readonly StartupMark single = new();
 
         [InitializeOnLoadMethod]
         private static void OnLoadMethod()
@@ -24,19 +25,18 @@ namespace StudioFortithri.Editor43
             if (!File.Exists(markFilePath))
             {
                 File.Create(markFilePath).Close();
-                File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(single));
+                File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(new StartupMark(true)));
 
                 InvokeMethods();
             }
             else
             {
-                EditorJsonUtility.FromJsonOverwrite(File.ReadAllText(markFilePath), single);
+                StartupMark mark = new(default);
+                EditorJsonUtility.FromJsonOverwrite(File.ReadAllText(markFilePath), mark);
 
-                if (!single.isStartup)
+                if (!mark.isStartup)
                 {
-                    single.isStartup = true;
-                    File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(single));
-
+                    File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(new StartupMark(true)));
                     InvokeMethods();
                 }
             }
@@ -46,10 +46,7 @@ namespace StudioFortithri.Editor43
 
         private static void OnEditorQuit()
         {
-            if (!File.Exists(markFilePath)) return;
-
-            single.isStartup = false;
-            File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(single));
+            if (File.Exists(markFilePath)) File.WriteAllText(markFilePath, EditorJsonUtility.ToJson(new StartupMark(false)));
         }
 
         private static void InvokeMethods()

@@ -4,7 +4,7 @@ using UnityEditor;
 
 namespace StudioFortithri.Editor43
 {
-    internal static class CustomInspectorAttributes
+    public static class CustomInspectorAttributes
     {
         public static void Rebuild()
         {

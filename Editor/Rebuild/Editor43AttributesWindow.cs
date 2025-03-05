@@ -6,7 +6,7 @@ namespace StudioFortithri.Editor43
 {
     internal class Editor43AttributesWindow : EditorWindow
     {
-        [MenuItem("Window/Editor 43 Attributes", priority = 9999)]
+        [MenuItem("Window/Studio Fortithri/Editor 43 Attributes", priority = 9999)]
         private static void DisplayWindow()
         {
             Editor43AttributesWindow window = GetWindow<Editor43AttributesWindow>();
